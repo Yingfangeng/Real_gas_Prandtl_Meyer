@@ -181,7 +181,7 @@ def PropsSI_General(propname, input_name1, input1, input_name2, input2, fluid_na
             
             # check for temperature lower than critical temperature
             if T1 < T_crit:
-
+                
                 # static density inside the wet range (point inside domain)
                 D_liquid = PropsSI_Custom('D', 'Q', 0, 'T', T1, fluid_name)
                 D_vapour = PropsSI_Custom('D', 'Q', 1, 'T', T1, fluid_name)
@@ -195,7 +195,7 @@ def PropsSI_General(propname, input_name1, input1, input_name2, input2, fluid_na
 
                     # property retrieval: partial derivatives requires special treatment
                     if propname == 'speed_of_sound' or propname=='A':
-
+                        
                         # using partial chi
                         prop = equilibrium_wet_vapour_speed_of_sound(frac, D1, T1, S1, 
                                                                     D_liquid, D_vapour, 

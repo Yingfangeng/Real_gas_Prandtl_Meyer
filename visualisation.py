@@ -15,6 +15,7 @@ def plot_downstream_mach_number(path):
     M = df.pivot(index='T_1', columns='s_1', values='M_2')
     
     M = M.mask(M == 999)
+    M = M.mask(M == 9999)
 
     S, T = np.meshgrid(M.columns, M.index)
 

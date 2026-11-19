@@ -1,12 +1,10 @@
 import numpy as np
-from scipy.integrate import quad
-from scipy.optimize import brentq
 import CoolProp.CoolProp as CP
 from real_gas_property import *
 import pandas as pd
 import os
-import argparse
 from concurrent.futures import ProcessPoolExecutor
+from scipy.integrate import simpson
 
 
 def prandtl_meyer_expansion(T_1, s_1, M_1, theta, tolerance, fluid='CO2'):
@@ -34,9 +32,18 @@ def prandtl_meyer_expansion(T_1, s_1, M_1, theta, tolerance, fluid='CO2'):
 
 
 
-    def calculate_residual(h_2, integration_tolerance):
+    def calculate_residual(h_2, integration_steps):
         
-        result, _ = quad(integrand, h_1, h_2, epsrel=integration_tolerance)
+        # result, _ = quad(integrand, h_1, h_2, epsrel=integration_tolerance)
+
+        h_list = np.linspace(h_1, h_2, integration_steps)
+        f_list = []
+        
+        for h in h_list:
+            f_list.append(integrand(h))
+        f_list = np.array(f_list)
+        result = simpson(f_list, x=h_list)
+
         residual = result - theta_target
         
         return residual
@@ -55,7 +62,7 @@ def prandtl_meyer_expansion(T_1, s_1, M_1, theta, tolerance, fluid='CO2'):
 
         iteration_no = 0
 
-        integration_tolerance = 1e-6
+        integration_steps = 10000
 
         while not bracket_found and iteration_no < max_iteration:
             
@@ -63,12 +70,9 @@ def prandtl_meyer_expansion(T_1, s_1, M_1, theta, tolerance, fluid='CO2'):
 
             # print('T', CP.PropsSI('T', 'H', h_2_lower_trial, 'S', s_0, fluid))
 
-            if integration_tolerance >= 0.01:
-                raise ValueError('Integration tolerance too high to converge')
-
             try: 
                 h_2_lower_trial = h_2_lower - step
-                residual = calculate_residual(h_2_lower_trial, integration_tolerance)
+                residual = calculate_residual(h_2_lower_trial, integration_steps)
 
                 print(f'Residual of {iteration_no+1} iteration:', residual)
                             
@@ -84,8 +88,8 @@ def prandtl_meyer_expansion(T_1, s_1, M_1, theta, tolerance, fluid='CO2'):
 
             except ValueError:
                
-                integration_tolerance = integration_tolerance * 2
-                print('Cannot locate the lower bound of h_2, doubling the integration tolerance', integration_tolerance)
+                integration_steps = integration_steps -1
+                print('Cannot locate the lower bound of h_2, integration steps', integration_steps)
 
                 continue
 
@@ -102,13 +106,10 @@ def prandtl_meyer_expansion(T_1, s_1, M_1, theta, tolerance, fluid='CO2'):
 
         while not solution_found and iteration_no < max_iteration:
 
-            if integration_tolerance >= 0.01:
-                raise ValueError('Integration tolerance too high to converge')
-            
             try: 
                 h_2 = (h_2_lower + h_2_upper) / 2
 
-                residual = calculate_residual(h_2, integration_tolerance)
+                residual = calculate_residual(h_2, integration_steps)
 
                 print(f'Residual of {iteration_no+1} iteration:', residual)
                 
@@ -125,8 +126,8 @@ def prandtl_meyer_expansion(T_1, s_1, M_1, theta, tolerance, fluid='CO2'):
                 
             except ValueError:
                 
-                integration_tolerance = integration_tolerance * 2
-                print('Value error occured during root finding, doubling the integration tolerance', integration_tolerance)
+                integration_steps = integration_steps -1
+                print('Value error occured during root finding, integration steps', integration_steps)
 
                 continue
 
@@ -148,7 +149,7 @@ def prandtl_meyer_expansion(T_1, s_1, M_1, theta, tolerance, fluid='CO2'):
     result = {}
     result['M_2'] = M_2
     result['h_2'] = h_2
-    result['integration_tolerance'] = integration_tolerance
+    result['integration_steps'] = integration_steps
 
     return result
 
@@ -170,10 +171,7 @@ if __name__ == '__main__':
     
     theta = 5
 
-    tolerance = 1e-6
-
-    # T_1 = 305
-    # s_1 = 1250 #1469.3548387096776
+    tolerance = 1e-5
 
     with ProcessPoolExecutor(max_workers=cores) as executor:
         tasks = [

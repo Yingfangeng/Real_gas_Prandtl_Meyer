@@ -5,14 +5,15 @@ import CoolProp.CoolProp as CP
 from real_gas_property import *
 import pandas as pd
 import os
+from scipy.integrate import simpson
 
 
 def prandtl_meyer_expansion(T_1, s_1, M_1, theta, tolerance, fluid='CO2'):
-
+    
     h_1 = CP.PropsSI('H', 'S', s_1, 'T', T_1, fluid)
     s_0 = s_1
     a_1 = PropsSI_General('A', 'S', s_1, 'T', T_1, fluid)
-
+    
     V_1 = M_1 * a_1
     h_0 = h_1 + 0.5 * V_1**2
 
@@ -20,7 +21,7 @@ def prandtl_meyer_expansion(T_1, s_1, M_1, theta, tolerance, fluid='CO2'):
 
 
     def integrand(h):
-
+        
         a = PropsSI_General('A', 'H', h, 'S', s_0, fluid)
         V = np.sqrt(2 * (h_0 - h))
         M = V / a
@@ -32,9 +33,18 @@ def prandtl_meyer_expansion(T_1, s_1, M_1, theta, tolerance, fluid='CO2'):
 
 
 
-    def calculate_residual(h_2, integration_tolerance):
+    def calculate_residual(h_2, integration_steps):
         
-        result, _ = quad(integrand, h_1, h_2, epsrel=integration_tolerance)
+        # result, _ = quad(integrand, h_1, h_2, epsrel=integration_tolerance)
+
+        h_list = np.linspace(h_1, h_2, integration_steps)
+        f_list = []
+        
+        for h in h_list:
+            f_list.append(integrand(h))
+        f_list = np.array(f_list)
+        result = simpson(f_list, x=h_list)
+
         residual = result - theta_target
         
         return residual
@@ -53,17 +63,13 @@ def prandtl_meyer_expansion(T_1, s_1, M_1, theta, tolerance, fluid='CO2'):
 
         iteration_no = 0
 
-        integration_tolerance = 1e-6
+        integration_steps = 10000
 
         while not bracket_found and iteration_no < max_iteration:
             
-            # print('h_2 lower bound trial', h_2_lower_trial)
-
-            # print('T', CP.PropsSI('T', 'H', h_2_lower_trial, 'S', s_0, fluid))
-
             try: 
                 h_2_lower_trial = h_2_lower - step
-                residual = calculate_residual(h_2_lower_trial, integration_tolerance)
+                residual = calculate_residual(h_2_lower_trial, integration_steps)
 
                 print(f'Residual of {iteration_no+1} iteration:', residual)
                             
@@ -81,9 +87,9 @@ def prandtl_meyer_expansion(T_1, s_1, M_1, theta, tolerance, fluid='CO2'):
 
             except ValueError as e:
                 print(e)
-                print('Cannot locate the lower bound of h_2, doubling the integration tolerance')
+                print('Cannot locate the lower bound of h_2, 2* the integration tolerance')
                 
-                integration_tolerance = integration_tolerance * 2
+                integration_steps = integration_steps -1
 
                 continue
 
@@ -102,7 +108,7 @@ def prandtl_meyer_expansion(T_1, s_1, M_1, theta, tolerance, fluid='CO2'):
             try: 
                 h_2 = (h_2_lower + h_2_upper) / 2
 
-                residual = calculate_residual(h_2, integration_tolerance)
+                residual = calculate_residual(h_2, integration_steps)
 
                 print(f'Residual of {iteration_no+1} iteration:', residual)
                 
@@ -113,15 +119,17 @@ def prandtl_meyer_expansion(T_1, s_1, M_1, theta, tolerance, fluid='CO2'):
                 else: 
                     if residual > 0:
                         h_2_lower = h_2
+
                     else:
                         h_2_upper = h_2
 
                 iteration_no = iteration_no + 1
 
-            except ValueError:
+            except ValueError as e:
+                print(e)
                 print('Value error occured, doubling the integration tolerance')
                                 
-                integration_tolerance = integration_tolerance * 2
+                integration_steps = integration_steps -1
 
                 continue
 
@@ -142,43 +150,42 @@ def prandtl_meyer_expansion(T_1, s_1, M_1, theta, tolerance, fluid='CO2'):
     result['M_2'] = M_2
     result['h_2'] = h_2
     print('T_2', CP.PropsSI('T', 'S', s_1, 'H', h_2, fluid))
-    print('Q_2', CP.PropsSI('Q', 'S', s_1, 'H', h_2, fluid))
-    result['integration_tolerance'] = integration_tolerance
+    # print('Q_2', CP.PropsSI('Q', 'S', s_1, 'H', h_2, fluid))
+    result['integration_tolerance'] = integration_steps
 
     return result
 
 
 if __name__ == '__main__':
 
-    csv_path = 'real_gas_PM_result_bisection.csv'
+    csv_path = 'real_gas_PM_result_bisection_parallel.csv'
+
+    df = pd.read_csv(csv_path)
+
+    
 
     fluid = 'CO2'
     
     s_1_list   = np.linspace(1150, 1700, 32)
     T_1_list   = np.linspace(305, 320, 32)
     
-    M_1   = 1.3
+    M_1   = 1.5
     
-    theta = 2
+    theta = 5
 
-    tolerance = 1e-6
+    tolerance = 2e-5
 
-    T_1 = 310
-    s_1 = 1423
+    # T_1 = 310.80645161290323
+    # s_1 = 1433.8709677419356
 
     # for T_1 in T_1_list:
     #     for s_1 in s_1_list:
 
-    result = prandtl_meyer_expansion(T_1, s_1, M_1, theta, tolerance, fluid)
+    for index, row in df[df['M_2'] == 999].iterrows():
 
-    row = {}
-    row['T_1'] = T_1
-    row['s_1'] = s_1
-    row['M_1'] = M_1
-    row['theta'] = theta
+        result = prandtl_meyer_expansion(row['T_1'], row['s_1'], row['M_1'], row['theta'], tolerance, fluid)
 
-    row.update(result)
+        df.loc[index, list(result)] = list(result.values())
+        df.to_csv(csv_path, index=False)
 
-    # pd.DataFrame([row]).to_csv(csv_path, mode='a', header=not os.path.exists(csv_path), index=False)
-
-    print(T_1, s_1, 'done')
+        print(row['T_1'], row['s_1'], 'done')
