@@ -738,7 +738,7 @@ def vapour_quality_SI(input_name1, input1, input_name2, input2, fluid_name = 'Ca
 def equilibrium_wet_vapour_speed_of_sound(alpha, D_mixture, T_mixture, S_mixture, D_liquid, D_vapour, fluid_name = 'CarbonDioxide'):
     # works the same as the PTmu equilibrium model introduced by Lund
 
-    X  = alpha * D_vapour / D_mixture
+    X  = alpha * D_vapour / D_mixture    # mass fraction
 
     # P  = PropsSI('P', 'D', D_mixture, 'S', S_mixture, fluid_name)
     P  = PropsSI('P', 'T', T_mixture, 'S', S_mixture, fluid_name)
@@ -754,7 +754,7 @@ def equilibrium_wet_vapour_speed_of_sound(alpha, D_mixture, T_mixture, S_mixture
     D_liquid_lower = PropsSI('D', 'P', P-dP, 'Q', 0, fluid_name)
     partial2       = (D_liquid_upper - D_liquid_lower) / (2*dP)
 
-    # partial x partial d
+    # partial x partial p
     D_upper     = PropsSI('D', 'P', P+dP, 'S', S_mixture, fluid_name)
     D_lower     = PropsSI('D', 'P', P-dP, 'S', S_mixture, fluid_name)
     alpha_upper = (D_upper - D_liquid_upper) / (D_vapour_upper - D_liquid_upper)

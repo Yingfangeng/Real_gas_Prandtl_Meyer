@@ -9,7 +9,7 @@ import os
 
 def prandtl_meyer_expansion(T_1, s_1, M_1, theta, tolerance, fluid='CO2'):
 
-    h_1 = PropsSI_General('H', 'S', s_1, 'T', T_1, fluid)
+    h_1 = CP.PropsSI('H', 'S', s_1, 'T', T_1, fluid)
     s_0 = s_1
     a_1 = PropsSI_General('A', 'S', s_1, 'T', T_1, fluid)
 
@@ -21,8 +21,6 @@ def prandtl_meyer_expansion(T_1, s_1, M_1, theta, tolerance, fluid='CO2'):
 
     def integrand(h):
 
-        # Local Mach number along the integral
-
         a = PropsSI_General('A', 'H', h, 'S', s_0, fluid)
         V = np.sqrt(2 * (h_0 - h))
         M = V / a
@@ -30,114 +28,143 @@ def prandtl_meyer_expansion(T_1, s_1, M_1, theta, tolerance, fluid='CO2'):
         if M < 1:
             raise ValueError("Subsonic state encountered.")
         
-        return np.sqrt(M**2 - 1) / (2 * (h_0 - h))
+        return -np.sqrt(M**2 - 1) / (2 * (h_0 - h))
 
 
-    def calculate_residual(h_2):
+
+    def calculate_residual(h_2, integration_tolerance):
         
-        result, _ = quad(integrand, h_2, h_1, epsrel=1e-7)
+        result, _ = quad(integrand, h_1, h_2, epsrel=integration_tolerance)
         residual = result - theta_target
-        
         
         return residual
 
 
 
-
-
     try: 
         step = 0.01 * (h_0 - h_1)
-        h_lower = h_1
+        
+        h_2_lower = h_1
+        h_2_upper = h_1
         
         bracket_found = False
 
-        for _ in range(1000):
-            
-            h_trial = h_lower - step
+        max_iteration = 1000
 
-            print('h_new', h_trial)
-            
-            residual = calculate_residual(h_trial)
-            print(residual)
-            
-            if residual >= 0:
-                bracket_found = True
-                break
+        iteration_no = 0
 
-            h_lower = h_trial
+        integration_tolerance = 1e-6
 
+        while not bracket_found and iteration_no < max_iteration:
+            
+            # print('h_2 lower bound trial', h_2_lower_trial)
+
+            # print('T', CP.PropsSI('T', 'H', h_2_lower_trial, 'S', s_0, fluid))
+
+            try: 
+                h_2_lower_trial = h_2_lower - step
+                residual = calculate_residual(h_2_lower_trial, integration_tolerance)
+
+                print(f'Residual of {iteration_no+1} iteration:', residual)
+                            
+                if residual >= 0:
+                    bracket_found = True
+                    print('Lower bound for h_2 found.')
+                    h_2_lower = h_2_lower_trial
+    
+                else:
+                    h_2_lower = h_2_lower_trial
+                    h_2_upper = h_2_lower_trial
+                
+                
+                iteration_no = iteration_no + 1
+
+            except ValueError as e:
+                print(e)
+                print('Cannot locate the lower bound of h_2, doubling the integration tolerance')
+                
+                integration_tolerance = integration_tolerance * 2
+
+                continue
+
+            
 
         if not bracket_found:
             raise RuntimeError("Could not bracket downstream enthalpy.")
 
-        # h_2 = brentq(calculate_residual, h_trial, h_1, xtol = tolereance)
+
+        
+        solution_found = False
+        iteration_no = 0
+
+        while not solution_found and iteration_no < max_iteration:
+
+            try: 
+                h_2 = (h_2_lower + h_2_upper) / 2
+
+                residual = calculate_residual(h_2, integration_tolerance)
+
+                print(f'Residual of {iteration_no+1} iteration:', residual)
+                
+                if abs(residual) < tolerance:
+                    solution_found = True
+                    print('Solution found')
+
+                else: 
+                    if residual > 0:
+                        h_2_lower = h_2
+                    else:
+                        h_2_upper = h_2
+
+                iteration_no = iteration_no + 1
+
+            except ValueError:
+                print('Value error occured, doubling the integration tolerance')
+                                
+                integration_tolerance = integration_tolerance * 2
+
+                continue
+
+        if not solution_found:
+            raise ValueError('Bi-section failed to find the solution')
 
 
-        for _ in range(1000):
-
-            
-            h_2 = (h_lower + h_upper) / 2
-            print(h_2)
-            residual = calculate_residual(h_2)
-
-            print( residual)
-
-            
-            if abs(residual) < tolerance:
-                break
-
-            if residual > 0:
-                h_lower = h_2
-            else:
-                h_upper = h_2
-
-        else:
-            raise RuntimeError("Bisection did not converge.")
-
-
-
-
-        # Downstream properties
-        P_2 = CP.PropsSI('P', 'H', h_2, 'S', s_0, fluid)
-        T_2 = CP.PropsSI('T', 'H', h_2, 'S', s_0, fluid)
         a_2 = PropsSI_General('A', 'H', h_2, 'S', s_0, fluid)
-
         V_2 = np.sqrt(2 * (h_0 - h_2))
         M_2 = V_2 / a_2
 
-        result = {}
-        result['M_2'] = M_2
-        result['h_2'] = h_2
+    except Exception as e:
+        print(f'Error occured for T {T_1} S {s_1}', e)
+        M_2 = 999
+        h_2 = 999
 
-    
-    except ValueError as e:
-
-        print('Cannot find a solution for this case', e)
-
-        result = {}
-        result['M_2'] = 999
-        result['h_2'] = 999
+    result = {}
+    result['M_2'] = M_2
+    result['h_2'] = h_2
+    print('T_2', CP.PropsSI('T', 'S', s_1, 'H', h_2, fluid))
+    print('Q_2', CP.PropsSI('Q', 'S', s_1, 'H', h_2, fluid))
+    result['integration_tolerance'] = integration_tolerance
 
     return result
 
 
 if __name__ == '__main__':
 
-    csv_path = 'real_gas_PM_result_test.csv'
+    csv_path = 'real_gas_PM_result_bisection.csv'
 
     fluid = 'CO2'
     
     s_1_list   = np.linspace(1150, 1700, 32)
     T_1_list   = np.linspace(305, 320, 32)
     
-    M_1   = 2
+    M_1   = 1.3
     
-    theta = 10
+    theta = 2
 
     tolerance = 1e-6
 
-    T_1 = 319.51612903225805
-    s_1 = 1469.3548387096776
+    T_1 = 310
+    s_1 = 1423
 
     # for T_1 in T_1_list:
     #     for s_1 in s_1_list:
