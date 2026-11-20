@@ -1,10 +1,7 @@
 import numpy as np
-from scipy.integrate import quad
-from scipy.optimize import brentq
 import CoolProp.CoolProp as CP
 from real_gas_property import *
 import pandas as pd
-import os
 from scipy.integrate import simpson
 
 
@@ -59,11 +56,11 @@ def prandtl_meyer_expansion(T_1, s_1, M_1, theta, tolerance, fluid='CO2'):
         
         bracket_found = False
 
-        max_iteration = 1000
+        max_iteration = 100
 
         iteration_no = 0
 
-        integration_steps = 10000
+        integration_steps = 1000
 
         while not bracket_found and iteration_no < max_iteration:
             
@@ -83,7 +80,7 @@ def prandtl_meyer_expansion(T_1, s_1, M_1, theta, tolerance, fluid='CO2'):
                     h_2_upper = h_2_lower_trial
                 
                 
-                iteration_no = iteration_no + 1
+                
 
             except ValueError as e:
                 print(e)
@@ -92,7 +89,8 @@ def prandtl_meyer_expansion(T_1, s_1, M_1, theta, tolerance, fluid='CO2'):
                 integration_steps = integration_steps -1
 
                 continue
-
+            
+            iteration_no = iteration_no + 1
             
 
         if not bracket_found:
@@ -123,7 +121,7 @@ def prandtl_meyer_expansion(T_1, s_1, M_1, theta, tolerance, fluid='CO2'):
                     else:
                         h_2_upper = h_2
 
-                iteration_no = iteration_no + 1
+                
 
             except ValueError as e:
                 print(e)
@@ -133,6 +131,8 @@ def prandtl_meyer_expansion(T_1, s_1, M_1, theta, tolerance, fluid='CO2'):
 
                 continue
 
+            iteration_no = iteration_no + 1
+            
         if not solution_found:
             raise ValueError('Bi-section failed to find the solution')
 
@@ -154,38 +154,3 @@ def prandtl_meyer_expansion(T_1, s_1, M_1, theta, tolerance, fluid='CO2'):
     result['integration_tolerance'] = integration_steps
 
     return result
-
-
-if __name__ == '__main__':
-
-    csv_path = 'real_gas_PM_result_bisection_parallel.csv'
-
-    df = pd.read_csv(csv_path)
-
-    
-
-    fluid = 'CO2'
-    
-    s_1_list   = np.linspace(1150, 1700, 32)
-    T_1_list   = np.linspace(305, 320, 32)
-    
-    M_1   = 1.5
-    
-    theta = 5
-
-    tolerance = 2e-5
-
-    # T_1 = 310.80645161290323
-    # s_1 = 1433.8709677419356
-
-    # for T_1 in T_1_list:
-    #     for s_1 in s_1_list:
-
-    for index, row in df[df['M_2'] == 999].iterrows():
-
-        result = prandtl_meyer_expansion(row['T_1'], row['s_1'], row['M_1'], row['theta'], tolerance, fluid)
-
-        df.loc[index, list(result)] = list(result.values())
-        df.to_csv(csv_path, index=False)
-
-        print(row['T_1'], row['s_1'], 'done')
