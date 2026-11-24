@@ -73,3 +73,22 @@ def plot_isentropic_mach_number(s_0, T_0, T_1, points):
     ax2.grid(ls = ':')
     ax2.set_ylim(-5,1)
     plt.show()
+
+
+
+def compare_theory_and_CFD(theory_path, cfd_path):
+
+    theory = pd.read_csv(theory_path)
+    cfd = pd.read_csv(cfd_path)
+
+    fig, ax = plt.subplots()
+
+    ax.plot(theory['M_1'], theory['M_2'], color = 'b', label = 'theory')
+    ax.scatter(cfd['M1'], cfd['M2'], color = 'r', label = 'CFD')
+
+    ax.legend()
+    ax.set_xlabel('M1')
+    ax.set_ylabel('M2')
+    ax.grid(ls = ':')
+
+    plt.show()

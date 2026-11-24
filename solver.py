@@ -142,6 +142,7 @@ def prandtl_meyer_expansion(T_1, s_1, M_1, theta, tolerance, fluid='CO2'):
         M_2 = V_2 / a_2
         
         print('T_2', CP.PropsSI('T', 'S', s_1, 'H', h_2, fluid))
+        print('Q', CP.PropsSI('Q', 'S', s_1, 'H', h_2, fluid))
     
     except Exception as e:
         print(f'Error occured for T {T_1} S {s_1}', e)
