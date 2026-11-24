@@ -16,12 +16,12 @@ if __name__ == '__main__':
     s_1_list   = np.linspace(1150, 1700, 32)
     T_1_list   = np.linspace(330, 350, 32)
     
-    M_1   = 1.1
-    theta = 5
+    M_1   = 1.2
+    theta = 2
 
     tolerance = 1e-5
 
-    csv_path = f'real_gas_PM_result_M_{M_1}_theta_{theta}.csv'
+    csv_path = f'real_gas_PM_dataset/real_gas_PM_result_M_{M_1}_theta_{theta}.csv'
 
 
     with ProcessPoolExecutor(max_workers=cores) as executor:

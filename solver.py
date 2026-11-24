@@ -140,7 +140,9 @@ def prandtl_meyer_expansion(T_1, s_1, M_1, theta, tolerance, fluid='CO2'):
         a_2 = PropsSI_General('A', 'H', h_2, 'S', s_0, fluid)
         V_2 = np.sqrt(2 * (h_0 - h_2))
         M_2 = V_2 / a_2
-
+        
+        print('T_2', CP.PropsSI('T', 'S', s_1, 'H', h_2, fluid))
+    
     except Exception as e:
         print(f'Error occured for T {T_1} S {s_1}', e)
         M_2 = 999
@@ -149,8 +151,6 @@ def prandtl_meyer_expansion(T_1, s_1, M_1, theta, tolerance, fluid='CO2'):
     result = {}
     result['M_2'] = M_2
     result['h_2'] = h_2
-    print('T_2', CP.PropsSI('T', 'S', s_1, 'H', h_2, fluid))
-    # print('Q_2', CP.PropsSI('Q', 'S', s_1, 'H', h_2, fluid))
     result['integration_tolerance'] = integration_steps
 
     return result

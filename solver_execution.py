@@ -9,12 +9,12 @@ if __name__ == '__main__':
 
     fluid = 'CO2'
     
-    M_1   = 1.5
-    theta = 5
+    M_1   = 1.1
+    theta = 3
     tolerance = 1e-5
 
-    T_1 = 330
-    s_1 = 1250
+    T_1 = 350
+    s_1 = 1150
 
     result = prandtl_meyer_expansion(T_1, s_1, M_1, theta, tolerance, fluid)
 

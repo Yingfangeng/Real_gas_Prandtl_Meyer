@@ -36,6 +36,7 @@ def plot_downstream_mach_number(path):
     plt.show()
 
 
+
 def plot_isentropic_mach_number(s_0, T_0, T_1, points):
 
     fluid = 'CO2'
@@ -52,6 +53,9 @@ def plot_isentropic_mach_number(s_0, T_0, T_1, points):
     a_list = np.array(a_list)
     gamma_list = np.array(gamma_list)
 
+    # for gamma in gamma_list:
+    #     if gamma < 1:
+    #         print(gamma)
 
     h_0 = CP.PropsSI('H', 'S', s_0, 'T', T_0, fluid)
     V_list = (2*(h_0 - h_list))**0.5
@@ -61,7 +65,11 @@ def plot_isentropic_mach_number(s_0, T_0, T_1, points):
     fig, ax = plt.subplots()
 
     J = 1 - gamma_list - (M_list)**(-2)
-
-    ax.plot(T_list, J)
+    ax.plot(T_list, M_list, marker = 'o')
     ax.grid(ls = ':')
+
+    fig2, ax2 = plt.subplots()
+    ax2.plot(T_list, J, marker = 'o')
+    ax2.grid(ls = ':')
+    ax2.set_ylim(-5,1)
     plt.show()
