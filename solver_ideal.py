@@ -43,7 +43,7 @@ def ideal_Prandtl_Meyer_function(T_1, s_1, M_1, theta, tolerance, fluid='CO2'):
 if __name__ ==  '__main__':
     
 
-    fluid = 'air'
+    fluid = 'CO2'
     
     s_1_list   = np.linspace(1150, 1700, 32)
     T_1_list   = np.linspace(330, 350, 32)
@@ -66,6 +66,3 @@ if __name__ ==  '__main__':
             row['M_2'] = M_2
 
             pd.DataFrame([row]).to_csv(csv_path, mode='a', header=not os.path.exists(csv_path), index=False)
-
-    
-

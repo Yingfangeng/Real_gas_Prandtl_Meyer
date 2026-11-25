@@ -1,7 +1,6 @@
 import numpy as np
 import CoolProp.CoolProp as CP
 from real_gas_property import *
-import pandas as pd
 from scipy.integrate import simpson
 
 
@@ -140,18 +139,24 @@ def prandtl_meyer_expansion(T_1, s_1, M_1, theta, tolerance, fluid='CO2'):
         a_2 = PropsSI_General('A', 'H', h_2, 'S', s_0, fluid)
         V_2 = np.sqrt(2 * (h_0 - h_2))
         M_2 = V_2 / a_2
+        Q_2 = CP.PropsSI('Q', 'S', s_1, 'H', h_2, fluid)
+        T_2 = CP.PropsSI('T', 'S', s_1, 'H', h_2, fluid)
         
-        print('T_2', CP.PropsSI('T', 'S', s_1, 'H', h_2, fluid))
-        print('Q', CP.PropsSI('Q', 'S', s_1, 'H', h_2, fluid))
+        print('T_2', T_2)
+        print('Q', Q_2)
     
     except Exception as e:
         print(f'Error occured for T {T_1} S {s_1}', e)
         M_2 = 999
         h_2 = 999
+        Q_2 = 999
+        T_2 = 999
 
     result = {}
     result['M_2'] = M_2
     result['h_2'] = h_2
+    result['Q_2'] = Q_2
+    result['T_2'] = T_2
     result['integration_tolerance'] = integration_steps
 
     return result
