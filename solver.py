@@ -6,7 +6,7 @@ from scipy.integrate import simpson
 
 def prandtl_meyer_expansion(T_1, s_1, M_1, theta, tolerance, fluid='CO2'):
     
-    h_1 = CP.PropsSI('H', 'S', s_1, 'T', T_1, fluid)
+    h_1 = PropsSI_General('H', 'S', s_1, 'T', T_1, fluid)
     s_0 = s_1
     a_1 = PropsSI_General('A', 'S', s_1, 'T', T_1, fluid)
     
@@ -139,8 +139,16 @@ def prandtl_meyer_expansion(T_1, s_1, M_1, theta, tolerance, fluid='CO2'):
         a_2 = PropsSI_General('A', 'H', h_2, 'S', s_0, fluid)
         V_2 = np.sqrt(2 * (h_0 - h_2))
         M_2 = V_2 / a_2
-        Q_2 = CP.PropsSI('Q', 'S', s_1, 'H', h_2, fluid)
-        T_2 = CP.PropsSI('T', 'S', s_1, 'H', h_2, fluid)
+        Q_2 = PropsSI_General('Q', 'S', s_1, 'H', h_2, fluid)
+        T_2 = PropsSI_General('T', 'S', s_1, 'H', h_2, fluid)
+        rho_2 = PropsSI_General('D', 'S', s_1, 'H', h_2, fluid)
+        cp_2 = PropsSI_General('CPMASS', 'S', s_1, 'H', h_2, fluid)
+        cv_2 = PropsSI_General('CVMASS', 'S', s_1, 'H', h_2, fluid)
+        ns_2 = PropsSI_General('ISENTROPIC_EXPANSION_COEFFICIENT', 'S', s_1, 'H', h_2, fluid)
+        Gamma_2 = PropsSI_General('FUNDAMENTAL_DERIVATIVE_OF_GAS_DYNAMICS', 'S', s_1, 'H', h_2, fluid)
+        Z_2 = PropsSI_General('Z', 'S', s_1, 'H', h_2, fluid)
+        P_2 = PropsSI_General('P', 'S', s_1, 'H', h_2, fluid)
+        
         
         print('T_2', T_2)
         print('Q', Q_2)
@@ -151,12 +159,28 @@ def prandtl_meyer_expansion(T_1, s_1, M_1, theta, tolerance, fluid='CO2'):
         h_2 = 999
         Q_2 = 999
         T_2 = 999
+        V_2 = 999
+        rho_2 = 999
+        cp_2 = 999
+        cv_2 = 999
+        ns_2 = 999
+        Gamma_2 = 999
+        Z_2 = 999
+        P_2 = 999
 
     result = {}
     result['M_2'] = M_2
     result['h_2'] = h_2
     result['Q_2'] = Q_2
     result['T_2'] = T_2
+    result['V_2'] = V_2
+    result['rho_2'] = rho_2
+    result['cp_2'] = cp_2
+    result['cv_2'] = cv_2
+    result['ns_2'] = ns_2
+    result['Gamma_2'] = Gamma_2
+    result['Z_2'] = Z_2
+    result['P_2'] = P_2
     result['integration_tolerance'] = integration_steps
 
     return result
