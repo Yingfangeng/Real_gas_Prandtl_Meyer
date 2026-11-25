@@ -6,6 +6,9 @@ from sklearn.metrics import r2_score
 
 
 if __name__ == '__main__':
+
+    training_target = 'M_2'
+
     
     seed = 42
     dataset_path = Path(__file__).parent / 'real_gas_PM_dataset'
@@ -17,6 +20,7 @@ if __name__ == '__main__':
 
     data = pd.concat(datasets, ignore_index=True)
     data = data[data['h_2'] != 999]
+    data = data[data['Q_2'] == -1]
 
     indices = list(range(len(data)))
     random.Random(seed).shuffle(indices)
@@ -34,20 +38,24 @@ if __name__ == '__main__':
     for name, split in splits.items():
         split.to_csv(dataset_path / f'{name}.csv', index=False)
 
-    features = ['s_1', 'T_1', 'M_1', 'theta']
+    features = ['Gamma_1', 'M_1', 'theta']
 
     model = PySRRegressor(
-        niterations=100,
+        niterations=1000,
         maxsize=15,
-        binary_operators=['+', '-', '*', '/'],
-        unary_operators=['square', 'sqrt'],
+        binary_operators=['+', '-', '*', '/'],# '^'],
+        unary_operators=[
+            'square', 'sqrt', 'abs',
+           # 'sin', 'cos', 'tan', 'atan',
+            'exp', 'log',
+        ],
         elementwise_loss='loss(prediction, target) = ((prediction - target) / target)^2',
         model_selection='best',
         precision=64,
     )
 
 
-    model.fit(training[features], training['h_2'])
+    model.fit(training[features], training[training_target])
 
     # Determine which formula to use according to the validation set
     best_loss = float('inf')
@@ -55,7 +63,7 @@ if __name__ == '__main__':
 
     for index in range(len(model.equations_)):
         prediction = model.predict(validation[features], index=index)
-        target = validation['h_2'].to_numpy()
+        target = validation[training_target].to_numpy()
         loss = (((prediction - target) / target) ** 2).mean()
         
         if loss < best_loss:
@@ -63,7 +71,7 @@ if __name__ == '__main__':
             best_index = index
 
     formula = str(model.sympy(index=best_index))
-    print('h_2 =', formula)
+    print(f'{training_target} =', formula)
 
     final_result = {
         'formula': formula,
@@ -72,9 +80,9 @@ if __name__ == '__main__':
     for name, split in splits.items():
 
         prediction = model.predict(split[features], index=best_index)
-        target = split['h_2'].to_numpy()
+        target = split[training_target].to_numpy()
         loss = (((prediction - target) / target) ** 2).mean()
-        r2 = r2_score(split['h_2'], prediction)
+        r2 = r2_score(split[training_target], prediction)
         rmse = (((prediction - target) ** 2).mean()) ** 0.5
         final_result[f'{name}_r2'] = r2
         final_result[f'{name}_rmse'] = rmse

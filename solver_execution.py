@@ -9,7 +9,7 @@ if __name__ == '__main__':
 
     fluid = 'CO2'
 
-    M_1_list   = np.linspace(1.01, 2.2, 10)
+    M_1_list   = np.linspace(1.01, 2.2, 50)
     
     theta = 5
     tolerance = 1e-5
@@ -22,7 +22,7 @@ if __name__ == '__main__':
     P_1 = CP.PropsSI('P', 'S', s_1, 'T', T_1, fluid)
 
     
-    csv_path = f'real_gas_PM_dataset/real_gas_PM_result_for_CFD.csv'
+    csv_path = f'real_gas_PM_dataset/real_gas_PM_result_for_CFD_comparison.csv'
 
     for M_1 in M_1_list:
         result = prandtl_meyer_expansion(T_1, s_1, M_1, theta, tolerance, fluid)
