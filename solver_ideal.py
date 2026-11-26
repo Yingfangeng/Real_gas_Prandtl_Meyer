@@ -40,29 +40,64 @@ def ideal_Prandtl_Meyer_function(T_1, s_1, M_1, theta, tolerance, fluid='CO2'):
 
     return M_2
 
-if __name__ ==  '__main__':
+# if __name__ ==  '__main__':
     
 
-    fluid = 'CO2'
+    # fluid = 'CO2'
     
-    s_1_list   = np.linspace(1150, 1700, 32)
-    T_1_list   = np.linspace(330, 350, 32)
+    # s_1_list   = np.linspace(1150, 1700, 32)
+    # T_1_list   = np.linspace(330, 350, 32)
     
-    M_1   = 1.1
-    theta = 3
+    # M_1   = 1.1
+    # theta = 3
 
-    tolerance = 1e-6
-    csv_path = f'validation/ideal_{fluid}_validate_M_{M_1}_theta_{theta}.csv'
+    # tolerance = 1e-6
+    # csv_path = f'validation/ideal_{fluid}_validate_M_{M_1}_theta_{theta}.csv'
 
-    for s_1 in s_1_list:
-        for T_1 in T_1_list:
-            M_2 = ideal_Prandtl_Meyer_function(T_1, s_1, M_1, theta, tolerance, fluid)
+    # for s_1 in s_1_list:
+    #     for T_1 in T_1_list:
+    #         M_2 = ideal_Prandtl_Meyer_function(T_1, s_1, M_1, theta, tolerance, fluid)
             
-            row = {}
-            row['T_1'] = T_1
-            row['s_1'] = s_1
-            row['M_1'] = M_1
-            row['theta'] = theta
-            row['M_2'] = M_2
+    #         row = {}
+    #         row['T_1'] = T_1
+    #         row['s_1'] = s_1
+    #         row['M_1'] = M_1
+    #         row['theta'] = theta
+    #         row['M_2'] = M_2
 
-            pd.DataFrame([row]).to_csv(csv_path, mode='a', header=not os.path.exists(csv_path), index=False)
+    #         pd.DataFrame([row]).to_csv(csv_path, mode='a', header=not os.path.exists(csv_path), index=False)
+
+    
+if __name__ == '__main__':
+
+    mode = 2
+
+    if mode == 1:
+        M_1 = 1.1
+        theta = 3
+        in_csv_path = f'real_gas_PM_dataset/real_gas_PM_result_M_{M_1}_theta_{theta}.csv'
+        out_csv_path = f'validation/ideal_CO2_validate_M_{M_1}_theta_{theta}.csv'
+
+    elif mode == 2:
+        in_csv_path = f'real_gas_PM_dataset/testing.csv'
+        out_csv_path = f'validation/ideal_CO2_validate.csv'
+        
+    tolerance = 1e-6
+    fluid = 'CO2'
+
+    in_df = pd.read_csv(in_csv_path)
+    in_df = in_df[in_df['h_2'] != 999]
+    in_df = in_df[in_df['Q_2'] == -1]
+
+    result = {}
+
+    for idx, row in in_df.iterrows():
+        result['s_1'] = row['s_1']
+        result['T_1'] = row['T_1']
+        result['M_1'] = row['M_1']
+        result['theta'] = row['theta']
+        result['M_2'] = row['M_2']
+        M_2 = ideal_Prandtl_Meyer_function(row['T_1'], row['s_1'], row['M_1'], row['theta'], tolerance, fluid)
+        result['M_2_model'] = M_2
+        
+        pd.DataFrame([result]).to_csv(out_csv_path, mode='a', header=not os.path.exists(out_csv_path), index=False)
