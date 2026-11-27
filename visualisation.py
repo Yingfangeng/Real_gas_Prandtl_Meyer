@@ -45,6 +45,8 @@ def plot_isentropic_mach_number(s_0, T_0, T_1, points):
     P_list = CP.PropsSI('P', 'S', s_0, 'T', T_list, fluid)
     h_list = CP.PropsSI('H', 'S', s_0, 'T', T_list, fluid)
 
+    rho_list = CP.PropsSI('D', 'S', s_0, 'T', T_list, fluid) / CP.PropsSI('rhocrit', fluid)
+
     a_list = []
     gamma_list = []
     for T in T_list:
@@ -65,13 +67,20 @@ def plot_isentropic_mach_number(s_0, T_0, T_1, points):
     fig, ax = plt.subplots()
 
     J = 1 - gamma_list - (M_list)**(-2)
-    ax.plot(T_list, M_list, marker = 'o')
+    denominator = 1 + (gamma_list - 1) * (M_list)**2
+    fraction = (M_list**2 - 1) / denominator
+
+    ax.plot(T_list, a_list, marker = 'o')
+    ax.set_xlabel('T')
+    ax.set_ylabel('Mach Number')
     ax.grid(ls = ':')
 
     fig2, ax2 = plt.subplots()
-    ax2.plot(T_list, J, marker = 'o')
+    ax2.plot(T_list, gamma_list)#, marker = 'o')
     ax2.grid(ls = ':')
-    # ax2.set_ylim(-5,1)
+    ax2.set_xlabel('T')
+    ax2.set_ylabel('Gamma')
+    ax2.set_ylim(-10,10)
     plt.show()
 
 
